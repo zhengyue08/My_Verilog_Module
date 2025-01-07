@@ -88,4 +88,41 @@ dual_port_RAM #(.DEPTH(DEPTH), .WIDTH(WIDTH)) ram (
 	.rdata(rdata)
 );
     
+`ifdef FORMAL
+
+// cover max depth
+fifo_wr_entry_highest: cover property (@(posedge clk) wptr == DEPTH-1);
+fifo_rd_entry_highest: cover property (@(posedge clk) rptr == DEPTH-1);
+
+// cover full empty status
+fifo_rempty: cover property (@(posedge clk) rempty);
+fifo_wfull:  cover property (@(posedge clk) wfull);
+
+
+// Empty Flag Assert
+empty_condition: assert property (@(posedge clk) disable iff(~rst_n) wptr - rptr == 0 |-> rempty);
+
+// Full Flag Assert
+full_condition: assert property (@(posedge clk) disable iff(~rst_n) wptr - rptr == DEPTH |-> wfull);
+
+
+full_wptr_nochange:   assert property (@(posedge clk) disable iff(~rst_n) $rose(wfull) |=> $stable(wptr));
+
+emptry_rptr_nochange: assert property (@(posedge clk) disable iff(~rst_n) $rose(rempty) |=> $stable(rptr));
+
+
+// Full Empty cannot be asserted same time
+empty_no_full: assert property (@(posedge clk) disable iff(~rst_n) rempty |-> ~wfull);
+full_no_empty: assert property (@(posedge clk) disable iff(~rst_n) wfull |-> ~rempty);
+
+// Can read and write different address at same edge
+rd_wr_same_time: assert property (@(posedge clk) disable iff(~rst_n) rinc && winc && (~wfull) && (~rempty) |=> wptr-rptr == $past(wptr - rptr));
+
+// Cannot read and write same address at same edge
+cannot_rd_wr_same_address1: assert property (@(posedge clk) disable iff(~rst_n) wfull && rinc && winc |=> (~wfull));
+cannot_rd_wr_same_address2: assert property (@(posedge clk) disable iff(~rst_n) rempty && rinc && winc |=> (~rempty));
+
+
+`endif
+
 endmodule

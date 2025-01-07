@@ -1,0 +1,24 @@
+[tasks]
+basic bmc
+cover
+basic cover : default
+
+[options]
+
+cover:
+mode cover
+--
+
+bmc:
+mode bmc
+--
+
+[engines]
+smtbmc boolector
+
+[script]
+verific -sv -DFORMAL=1 sfifo.v
+prep -top sfifo
+
+[files]
+../rtl/sfifo.v
